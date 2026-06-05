@@ -87,32 +87,83 @@ Java_com_janeasystems_nodejsmobile_NodeJsMobile_startNodeWithArguments(
     }
 
     jsize argc = env->GetArrayLength(arguments);
-
-    // Calculate total bytes for contiguous argv buffer
-    int totalSize = 0;
-    for (jsize i = 0; i < argc; i++) {
-        jstring s = (jstring)env->GetObjectArrayElement(arguments, i);
-        totalSize += (int)env->GetStringUTFLength(s) + 1;
-        env->DeleteLocalRef(s);
+    if (argc < 2) {
+        __android_log_write(ANDROID_LOG_ERROR, ADBTAG, "Need at least 2 arguments: node <script>");
+        return -1;
     }
 
-    char* argsBuffer = (char*)calloc(totalSize, sizeof(char));
+    // Extract all argument strings
     char** argv = (char**)calloc(argc, sizeof(char*));
-    char* pos = argsBuffer;
+    char** toFree = (char**)calloc(argc, sizeof(char*));
 
     for (jsize i = 0; i < argc; i++) {
         jstring s = (jstring)env->GetObjectArrayElement(arguments, i);
         const char* cs = env->GetStringUTFChars(s, nullptr);
-        size_t len = strlen(cs);
-        strncpy(pos, cs, len);
-        argv[i] = pos;
-        pos += len + 1;
+        argv[i] = strdup(cs);
+        toFree[i] = argv[i];
         env->ReleaseStringUTFChars(s, cs);
         env->DeleteLocalRef(s);
     }
 
+    // argv[1] is the script path, e.g. /data/user/0/.../files/nodejs-project/main.js
+    // Derive the project directory from the script path
+    const char* scriptPath = argv[1];
+    char projectDir[PATH_MAX] = {0};
+
+    // Find the last '/' to get the directory containing main.js
+    const char* lastSlash = strrchr(scriptPath, '/');
+    if (lastSlash != nullptr) {
+        size_t dirLen = (size_t)(lastSlash - scriptPath);
+        if (dirLen < PATH_MAX - 1) {
+            strncpy(projectDir, scriptPath, dirLen);
+            projectDir[dirLen] = '\0';
+        }
+    }
+
+    if (projectDir[0] != '\0') {
+        // Critical: set working directory to the nodejs project.
+        // Node.js uses CWD for dotenv file loading and some module resolution.
+        if (chdir(projectDir) != 0) {
+            __android_log_write(ANDROID_LOG_WARN, ADBTAG, "chdir to project dir failed");
+        } else {
+            __android_log_print(ANDROID_LOG_INFO, ADBTAG, "CWD set to: %s", projectDir);
+        }
+
+        // HOME must be set; Node.js / libuv crash on Android without it
+        if (getenv("HOME") == nullptr || getenv("HOME")[0] == '\0') {
+            setenv("HOME", projectDir, 1);
+            __android_log_print(ANDROID_LOG_INFO, ADBTAG, "HOME set to: %s", projectDir);
+        }
+
+        // TMPDIR must point to a writable directory; libuv uses it for temp files
+        // Android's tmpdir is typically /data/user/0/<pkg>/cache
+        // We derive it from projectDir: go two levels up (files/nodejs-project -> files -> app-root)
+        // then use cache. Simplest safe choice: use projectDir itself as tmpdir fallback.
+        if (getenv("TMPDIR") == nullptr || getenv("TMPDIR")[0] == '\0') {
+            // Build cache path: replace /files/nodejs-project with /cache
+            char tmpDir[PATH_MAX] = {0};
+            const char* filesMarker = strstr(projectDir, "/files/");
+            if (filesMarker != nullptr) {
+                size_t prefixLen = (size_t)(filesMarker - projectDir);
+                snprintf(tmpDir, sizeof(tmpDir), "%.*s/cache", (int)prefixLen, projectDir);
+            } else {
+                strncpy(tmpDir, projectDir, sizeof(tmpDir) - 1);
+            }
+            setenv("TMPDIR", tmpDir, 1);
+            __android_log_print(ANDROID_LOG_INFO, ADBTAG, "TMPDIR set to: %s", tmpDir);
+        }
+    }
+
+    __android_log_print(ANDROID_LOG_INFO, ADBTAG,
+        "Starting node::Start with %d args, script=%s", (int)argc, scriptPath);
+
     int exitCode = node::Start((int)argc, argv);
-    free(argsBuffer);
+
+    __android_log_print(ANDROID_LOG_INFO, ADBTAG, "node::Start exited with code %d", exitCode);
+
+    for (jsize i = 0; i < argc; i++) free(toFree[i]);
     free(argv);
+    free(toFree);
+
     return (jint)exitCode;
 }

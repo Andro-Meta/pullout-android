@@ -1,0 +1,95 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :nodejs-mobile-android-lib:preBuild UP-TO-DATE
+> Task :nodejs-mobile-android-lib:preDebugBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :nodejs-mobile-android-lib:generateDebugResValues UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :nodejs-mobile-android-lib:generateDebugResources UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :nodejs-mobile-android-lib:packageDebugResources UP-TO-DATE
+> Task :nodejs-mobile-android-lib:parseDebugLocalResources UP-TO-DATE
+> Task :nodejs-mobile-android-lib:generateDebugRFile UP-TO-DATE
+> Task :nodejs-mobile-android-lib:writeDebugAarMetadata UP-TO-DATE
+> Task :nodejs-mobile-android-lib:extractDeepLinksDebug UP-TO-DATE
+> Task :nodejs-mobile-android-lib:processDebugManifest UP-TO-DATE
+> Task :nodejs-mobile-android-lib:compileDebugLibraryResources UP-TO-DATE
+> Task :nodejs-mobile-android-lib:javaPreCompileDebug UP-TO-DATE
+> Task :nodejs-mobile-android-lib:compileDebugJavaWithJavac UP-TO-DATE
+> Task :nodejs-mobile-android-lib:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :nodejs-mobile-android-lib:mergeDebugShaders UP-TO-DATE
+> Task :nodejs-mobile-android-lib:compileDebugShaders NO-SOURCE
+> Task :nodejs-mobile-android-lib:generateDebugAssets UP-TO-DATE
+> Task :nodejs-mobile-android-lib:packageDebugAssets UP-TO-DATE
+> Task :nodejs-mobile-android-lib:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :nodejs-mobile-android-lib:processDebugJavaRes NO-SOURCE
+> Task :nodejs-mobile-android-lib:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :nodejs-mobile-android-lib:configureCMakeDebug[arm64-v8a]
+> Task :app:generateDebugResources
+> Task :nodejs-mobile-android-lib:buildCMakeDebug[arm64-v8a]
+> Task :nodejs-mobile-android-lib:configureCMakeDebug[armeabi-v7a]
+> Task :nodejs-mobile-android-lib:buildCMakeDebug[armeabi-v7a]
+> Task :nodejs-mobile-android-lib:configureCMakeDebug[x86_64]
+> Task :nodejs-mobile-android-lib:buildCMakeDebug[x86_64]
+> Task :nodejs-mobile-android-lib:mergeDebugJniLibFolders UP-TO-DATE
+> Task :nodejs-mobile-android-lib:mergeDebugNativeLibs UP-TO-DATE
+> Task :nodejs-mobile-android-lib:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :nodejs-mobile-android-lib:stripDebugDebugSymbols UP-TO-DATE
+> Task :nodejs-mobile-android-lib:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :nodejs-mobile-android-lib:extractDebugAnnotations UP-TO-DATE
+> Task :nodejs-mobile-android-lib:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :nodejs-mobile-android-lib:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :nodejs-mobile-android-lib:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :nodejs-mobile-android-lib:prepareDebugArtProfile UP-TO-DATE
+> Task :nodejs-mobile-android-lib:prepareLintJarForPublish UP-TO-DATE
+> Task :nodejs-mobile-android-lib:mergeDebugJavaResource UP-TO-DATE
+> Task :nodejs-mobile-android-lib:syncDebugLibJars UP-TO-DATE
+> Task :nodejs-mobile-android-lib:bundleDebugAar UP-TO-DATE
+> Task :nodejs-mobile-android-lib:assembleDebug UP-TO-DATE
+> Task :app:packageDebugResources
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:parseDebugLocalResources
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeDebugStartupProfile UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:mergeDebugResources
+> Task :app:dataBindingGenBaseClassesDebug
+> Task :app:processDebugResources
+> Task :app:kspDebugKotlin
+
+> Task :app:compileDebugKotlin
+w: file:///D:/Projects/PULLOUT/app/src/main/java/com/andrometa/pullout/ui/SettingsSheet.kt:53:18 'setToolbarColor(Int): CustomTabsIntent.Builder' is deprecated. Deprecated in Java
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics UP-TO-DATE
+> Task :app:processDebugJavaRes
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebug
+
+BUILD SUCCESSFUL in 6s
+77 actionable tasks: 22 executed, 55 up-to-date
