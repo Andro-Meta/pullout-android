@@ -22,7 +22,7 @@ object NodeServerManager {
 
     private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var healthJob: Job? = null
-    private var nodeStarted = false
+    private val nodeStarted = java.util.concurrent.atomic.AtomicBoolean(false)
 
     private val healthClient = OkHttpClient.Builder()
         .connectTimeout(1, TimeUnit.SECONDS)
@@ -30,7 +30,7 @@ object NodeServerManager {
         .build()
 
     fun startServer(context: Context) {
-        if (nodeStarted) {
+        if (nodeStarted.get()) {
             // Node is already running — just start health monitoring if needed
             startHealthMonitor()
             return
@@ -47,7 +47,7 @@ object NodeServerManager {
                 // resolve node_modules relative to its directory.
                 val mainJsPath = "$projectDir/main.js"
                 val nodeInstance = NodeJsMobile()
-                nodeStarted = true
+                nodeStarted.set(true)
                 startHealthMonitor()
 
                 // This blocks until Node exits (runs on IO thread pool)
@@ -56,11 +56,12 @@ object NodeServerManager {
                     true  // redirectOutputToLogcat
                 )
                 Log.w(TAG, "Node.js exited with code $exitCode")
-                nodeStarted = false
+                nodeStarted.set(false)
                 _serverState.postValue(ServerState.Error("Server exited (code $exitCode)"))
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start Node.js", e)
-                nodeStarted = false
+                nodeStarted.set(false)
+                healthJob?.cancel()
                 _serverState.postValue(ServerState.Error("Failed to start: ${e.message}"))
             }
         }

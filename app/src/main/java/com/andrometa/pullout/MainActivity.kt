@@ -253,7 +253,7 @@ class MainActivity : AppCompatActivity() {
                     if (NodeServerManager.isReady()) submitUrl(url)
                     else {
                         // Server not ready; URL is in the field, user taps PULL when ready
-                        showError(getString(R.string.status_init))
+                        showError(getString(R.string.err_offline))
                     }
                 } else {
                     showError(getString(R.string.err_invalid_url))

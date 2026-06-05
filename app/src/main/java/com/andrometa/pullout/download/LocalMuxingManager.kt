@@ -189,29 +189,32 @@ class LocalMuxingManager(private val context: Context) {
     /**
      * Finds the ffmpeg executable. On Android, nativeLibraryDir contains
      * libffmpegexe.so which is executable on API 26+ (minSdk of this project).
+     *
+     * Returns null cleanly if the AAR is not present (wrong ABI or missing
+     * dependency) so the mux step can be marked FAILED without a crash.
      */
     private fun findFfmpegBinary(): File? {
-        // Primary: nativeLibraryDir (where Android extracts APK libs)
-        val nativeDir = File(context.applicationInfo.nativeLibraryDir)
-        val libFile = File(nativeDir, "libffmpegexe.so")
-        if (libFile.exists() && libFile.canExecute()) {
-            return libFile
-        }
-        // Try to set executable bit if it exists but isn't marked executable
-        if (libFile.exists()) {
-            libFile.setExecutable(true, false)
-            if (libFile.canExecute()) return libFile
-        }
+        val nativeLibDir = context.applicationInfo.nativeLibraryDir
+        val libFile = File(nativeLibDir, "libffmpegexe.so")
 
-        // Fallback: copy to filesDir where we can set permissions
-        val execCopy = File(context.filesDir, "ffmpegexe")
-        if (!execCopy.exists() || execCopy.length() != libFile.length()) {
-            if (libFile.exists()) {
+        // Primary: use the native lib directly (preferred on Android 10+)
+        if (libFile.exists() && libFile.canExecute()) return libFile
+
+        // ffmpeg-mini AAR not in APK or wrong ABI — muxing unavailable
+        if (!libFile.exists()) return null
+
+        // Fallback: copy to filesDir (needed on some older devices where nativeLibraryDir is noexec)
+        val execCopy = File(context.filesDir, "ffmpeg")
+        return try {
+            // Only copy if sizes differ (different version) or copy doesn't exist
+            if (!execCopy.exists() || execCopy.length() != libFile.length()) {
                 libFile.copyTo(execCopy, overwrite = true)
                 execCopy.setExecutable(true, false)
             }
+            if (execCopy.exists() && execCopy.length() > 0) execCopy else null
+        } catch (e: Exception) {
+            null  // clean failure — mux will be marked FAILED
         }
-        return if (execCopy.exists() && execCopy.canExecute()) execCopy else null
     }
 
     companion object {

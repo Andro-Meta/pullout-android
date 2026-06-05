@@ -51,14 +51,17 @@ class DownloadService : Service() {
             startForeground(NotificationHelper.FOREGROUND_ID + 1, notification)
         }
 
-        when (intent?.action) {
+        // Handle null intent (OS restart after kill — no action to perform)
+        if (intent == null) return START_NOT_STICKY
+
+        when (intent.action) {
             ACTION_DIRECT -> {
                 val url = intent.getStringExtra(EXTRA_URL) ?: return START_NOT_STICKY
                 val record = DownloadRecord(
                     originalUrl = intent.getStringExtra(EXTRA_ORIGINAL_URL) ?: url,
-                    cobaltUrl = url,
-                    filename = intent.getStringExtra(EXTRA_FILENAME) ?: "pullout_download",
-                    mimeType = intent.getStringExtra(EXTRA_MIME_TYPE) ?: "video/mp4"
+                    cobaltUrl   = url,
+                    filename    = intent.getStringExtra(EXTRA_FILENAME) ?: "pullout_download",
+                    mimeType    = intent.getStringExtra(EXTRA_MIME_TYPE) ?: "video/mp4"
                 )
                 scope.launch {
                     val id = repository.insert(record)
