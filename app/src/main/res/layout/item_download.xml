@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp">
+
+    <TextView android:id="@+id/tvFilename"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:fontFamily="@font/space_mono_regular" android:textSize="13sp"
+        android:textColor="@color/text_primary"
+        android:ellipsize="middle" android:singleLine="true"/>
+
+    <TextView android:id="@+id/tvStatus"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/space_mono_regular" android:textSize="11sp"
+        android:textColor="@color/text_secondary"/>
+
+    <!-- Mux phase label (for local-processing downloads) -->
+    <TextView android:id="@+id/tvMuxPhase"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:fontFamily="@font/space_mono_regular" android:textSize="10sp"
+        android:textColor="@color/neon_cyan_dim"
+        android:visibility="gone"/>
+
+    <ProgressBar android:id="@+id/progressBar"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:layout_width="match_parent" android:layout_height="@dimen/progress_bar_height"
+        android:layout_marginTop="6dp"
+        android:progressTint="@color/neon_cyan"
+        android:progressBackgroundTint="@color/border"
+        android:max="100" android:visibility="gone"/>
+
+    <LinearLayout android:id="@+id/layoutActions"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:orientation="horizontal">
+
+        <Button android:id="@+id/btnOpen"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content" android:layout_height="32dp"
+            android:text="@string/action_open"
+            android:fontFamily="@font/space_mono_bold"
+            android:textColor="@color/neon_cyan" android:textSize="11sp"
+            android:paddingHorizontal="12dp" android:visibility="gone"/>
+
+        <Button android:id="@+id/btnRetry"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content" android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:text="@string/action_retry"
+            android:fontFamily="@font/space_mono_bold"
+            android:textColor="@color/neon_red" android:textSize="11sp"
+            android:paddingHorizontal="12dp" android:visibility="gone"/>
+
+        <Button android:id="@+id/btnCancel"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content" android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:text="@string/action_cancel"
+            android:fontFamily="@font/space_mono_regular"
+            android:textColor="@color/text_secondary" android:textSize="11sp"
+            android:paddingHorizontal="12dp" android:visibility="gone"/>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="4dp">
+    <ImageView android:id="@+id/ivThumb"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:scaleType="centerCrop"
+        android:background="@color/surface_elevated"/>
+    <View android:id="@+id/viewSelected"
+        android:layout_width="match_parent" android:layout_height="120dp"
+        android:background="@color/cyan_30"
+        android:visibility="gone"/>
+    <ImageView android:id="@+id/ivCheck"
+        android:layout_width="24dp" android:layout_height="24dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="6dp"
+        android:src="@drawable/ic_queue"
+        android:tint="@color/neon_cyan"
+        android:visibility="gone"/>
+    <TextView android:id="@+id/tvType"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="4dp"
+        android:paddingHorizontal="4dp" android:paddingVertical="2dp"
+        android:background="@color/surface"
+        android:fontFamily="@font/space_mono_regular" android:textSize="9sp"
+        android:textColor="@color/text_secondary"/>
+</FrameLayout>
