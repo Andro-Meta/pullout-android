@@ -1,0 +1,3 @@
+com.janeasystems.nodejsmobile.NodeJsMobile
+method: startNodeWithArguments(String[] arguments, boolean redirectOutputToLogcat)
+library_load: System.loadLibrary("node"); System.loadLibrary("nodejs-mobile-native");

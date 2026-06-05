@@ -1,0 +1,6 @@
+-keep class **.nodejsmobile.** { *; }
+-keepclasseswithmembers class * { native <methods>; }
+-keepclasseswithmembers class * { @android.webkit.JavascriptInterface <methods>; }
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep @androidx.room.Entity class * { *; }
+-keep class com.arthenica.ffmpegkit.** { *; }

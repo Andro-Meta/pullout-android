@@ -1,0 +1,15 @@
+.gradle/
+build/
+/local.properties
+.idea/
+*.iml
+app/src/main/assets/nodejs-project/
+app/libs/nodejs-mobile-android.aar
+app/src/main/jniLibs/
+app/libnode/
+nodejs-mobile-android-lib/libnode/
+cobalt-src/
+cobalt-deploy/
+.cxx/
+*.apk
+*.keystore
