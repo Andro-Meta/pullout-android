@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Pullout" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:windowBackground">@color/background</item>
+        <item name="colorPrimary">@color/neon_cyan</item>
+        <item name="colorOnPrimary">@color/background</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="bottomSheetDialogTheme">@style/Theme.Pullout.BottomSheet</item>
+    </style>
+
+    <style name="Theme.Pullout.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Pullout.BottomSheet.Modal</item>
+    </style>
+
+    <style name="Pullout.BottomSheet.Modal" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">@color/surface</item>
+    </style>
+
+    <style name="TextAppearance.Pullout.Mono" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/space_mono_regular</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="TextAppearance.Pullout.MonoBold" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/space_mono_bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+</resources>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="paste_download" android:enabled="true"
+        android:icon="@drawable/ic_queue"
+        android:shortcutShortLabel="@string/shortcut_paste_short"
+        android:shortcutLongLabel="@string/shortcut_paste_long">
+        <intent android:action="android.intent.action.MAIN"
+            android:targetPackage="com.andrometa.pullout"
+            android:targetClass="com.andrometa.pullout.MainActivity">
+            <extra android:name="shortcut_paste" android:value="true"/>
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="open_queue" android:enabled="true"
+        android:icon="@drawable/ic_queue"
+        android:shortcutShortLabel="@string/shortcut_queue_short"
+        android:shortcutLongLabel="@string/shortcut_queue_long">
+        <intent android:action="android.intent.action.MAIN"
+            android:targetPackage="com.andrometa.pullout"
+            android:targetClass="com.andrometa.pullout.MainActivity">
+            <extra android:name="shortcut_queue" android:value="true"/>
+        </intent>
+    </shortcut>
+</shortcuts>

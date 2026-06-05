@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="border_radius">3dp</dimen>
+    <dimen name="padding_default">16dp</dimen>
+    <dimen name="fab_size">48dp</dimen>
+    <dimen name="progress_bar_height">2dp</dimen>
+    <dimen name="badge_size">18dp</dimen>
+</resources>
