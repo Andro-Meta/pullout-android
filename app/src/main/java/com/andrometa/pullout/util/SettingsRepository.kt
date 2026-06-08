@@ -24,4 +24,10 @@ class SettingsRepository(context: Context) {
     var firstLaunchDone: Boolean
         get() = prefs.getBoolean("first_launch_done", false)
         set(v) { prefs.edit().putBoolean("first_launch_done", v).apply() }
+
+    // The last clipboard URL we auto-handled, so returning to the app doesn't
+    // re-pull the same link every time it regains focus.
+    var lastClipboardUrl: String
+        get() = prefs.getString("last_clipboard_url", "") ?: ""
+        set(v) { prefs.edit().putString("last_clipboard_url", v).apply() }
 }

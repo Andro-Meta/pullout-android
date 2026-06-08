@@ -35,6 +35,8 @@
     <string name="picker_title">select items to pull</string>
     <string name="clip_prompt">pull from clipboard?</string>
     <string name="clip_action">PULL</string>
+    <string name="clip_pulling">pulling from clipboard…</string>
+    <string name="clip_queued">link ready — pulling when server is up…</string>
     <string name="err_invalid_url">not a supported url</string>
     <string name="err_generic">something went wrong</string>
     <string name="err_offline">server offline — retry</string>

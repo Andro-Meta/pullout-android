@@ -46,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     private val queueViewModel: DownloadQueueViewModel by viewModels()
     private var currentOriginalUrl = ""
     private var pulseAnim: Animation? = null
+    private var pendingClipboardUrl: String? = null
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -86,7 +87,18 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Clipboard reads are only reliable once the window actually has focus on
+        // Android 13+. We trigger from onWindowFocusChanged instead of here, but
+        // also try here as a fallback for the cold-start case.
         if (settings.clipboardTriggerEnabled) checkClipboard()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // This is the reliable point to read the clipboard — the activity is
+        // focused, so the OS grants clipboard access without the access toast
+        // racing the read.
+        if (hasFocus && settings.clipboardTriggerEnabled) checkClipboard()
     }
 
     // ── Server state ──────────────────────────────────────────────────────────
@@ -105,6 +117,11 @@ class MainActivity : AppCompatActivity() {
                     binding.tvStatus.setTextColor(getColor(R.color.neon_green))
                     binding.btnPull.isEnabled = true
                     stopPulse()
+                    // A clipboard link grabbed while the server was warming now pulls.
+                    pendingClipboardUrl?.let { u ->
+                        pendingClipboardUrl = null
+                        submitUrl(u)
+                    }
                 }
                 is ServerState.Error -> {
                     binding.tvStatus.text = getString(R.string.status_offline)
@@ -245,12 +262,29 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkClipboard() {
         val url = ClipboardHelper.getSupportedUrl(this) ?: return
-        Snackbar.make(binding.root, getString(R.string.clip_prompt), Snackbar.LENGTH_LONG)
-            .setAction(getString(R.string.clip_action)) { submitUrl(url) }
-            .setBackgroundTint(getColor(R.color.surface))
-            .setTextColor(getColor(R.color.text_primary))
-            .setActionTextColor(getColor(R.color.neon_cyan))
-            .show()
+        // De-dupe: don't re-handle a URL we already grabbed (every focus gain
+        // would otherwise re-trigger it). Only act on a NEW clipboard link.
+        if (url == settings.lastClipboardUrl) return
+        settings.lastClipboardUrl = url
+
+        // Auto-grab: drop the link into the input box so it's visibly captured,
+        // then pull it automatically once the server is ready. The input shows
+        // what's happening; no tap required.
+        binding.etUrl.setText(url)
+        if (NodeServerManager.isReady()) {
+            submitUrl(url)
+            Snackbar.make(binding.root, getString(R.string.clip_pulling), Snackbar.LENGTH_SHORT)
+                .setBackgroundTint(getColor(R.color.surface))
+                .setTextColor(getColor(R.color.neon_cyan))
+                .show()
+        } else {
+            // Server still warming — leave it pre-filled and pull on READY.
+            pendingClipboardUrl = url
+            Snackbar.make(binding.root, getString(R.string.clip_queued), Snackbar.LENGTH_LONG)
+                .setBackgroundTint(getColor(R.color.surface))
+                .setTextColor(getColor(R.color.text_primary))
+                .show()
+        }
     }
 
     // ── Intent handling ───────────────────────────────────────────────────────
