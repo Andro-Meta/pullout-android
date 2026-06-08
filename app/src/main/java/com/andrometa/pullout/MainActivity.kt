@@ -66,6 +66,17 @@ class MainActivity : AppCompatActivity() {
         setupSettings()
         handleFirstLaunch()
         handleIntent(intent)
+
+        // Attach the po_token capture WebView to this Activity's surface. YouTube's
+        // player only initializes (and emits the /player request we harvest) when the
+        // WebView has a real rendering surface — a detached/service WebView never lays
+        // out the player. Attached at 1x1 so it's imperceptible.
+        com.andrometa.pullout.auth.PoTokenManager.attachWebHost(this)
+    }
+
+    override fun onDestroy() {
+        com.andrometa.pullout.auth.PoTokenManager.detachWebHost()
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -32,8 +32,10 @@ class CobaltServerService : Service() {
         com.andrometa.pullout.auth.PoTokenManager.reservePort()
         // 2) Start cobalt (writes .env using the reserved port, then boots node).
         NodeServerManager.startServer(this)
-        // 3) Bring up the po_token HTTP server + hidden WebView.
-        com.andrometa.pullout.auth.PoTokenManager.start(applicationContext)
+        // 3) Bring up the po_token HTTP server (loopback). The capture WebView is
+        //    attached later from MainActivity (it needs a real Activity surface to
+        //    initialize YouTube's player).
+        com.andrometa.pullout.auth.PoTokenManager.startServer(applicationContext)
         return START_STICKY  // Restart service if killed
     }
 

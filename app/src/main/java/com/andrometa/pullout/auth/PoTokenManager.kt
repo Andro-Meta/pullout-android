@@ -53,25 +53,48 @@ object PoTokenManager {
         Log.i(TAG, "reserved po_token port $port (server $sessionServerUrl)")
     }
 
-    fun start(context: Context) {
+    @Volatile private var onTokenCb: ((String, String) -> Unit)? = null
+
+    /**
+     * Start ONLY the loopback HTTP server (called from the service). The WebView
+     * that actually harvests the token is attached later from an Activity via
+     * attachWebHost(), because YouTube's player needs a real rendering surface.
+     */
+    fun startServer(@Suppress("UNUSED_PARAMETER") context: Context) {
         reservePort()
         try {
-            server?.let {
-                if (!it.isAlive) it.start(NanoTimeoutMs, false)
-            }
+            server?.let { if (!it.isAlive) it.start(NanoTimeoutMs, false) }
             Log.i(TAG, "PoTokenServer listening on 127.0.0.1:$port")
         } catch (e: Exception) {
             Log.e(TAG, "failed starting PoTokenServer", e)
         }
+    }
 
-        if (webView == null) {
-            webView = PoTokenWebView(context)
-        }
-        webView?.start { potoken, visitor ->
+    /**
+     * Attach the capture WebView to a live Activity's view tree so YouTube's
+     * player initializes and emits /youtubei/v1/player. Idempotent: if a WebView
+     * is already attached and we already have a token, this is a no-op.
+     */
+    fun attachWebHost(activity: android.app.Activity) {
+        val host = activity.findViewById<android.view.ViewGroup>(android.R.id.content) ?: return
+        if (webView != null && server?.token != null) return
+        // Recreate the WebView against the activity context for a valid surface.
+        webView?.destroy()
+        val wv = PoTokenWebView(activity)
+        webView = wv
+        wv.start(host) { potoken, visitor ->
             server?.token = PoTokenServer.TokenInfo(potoken, visitor, System.currentTimeMillis())
             Log.i(TAG, "token stored (len=${potoken.length})")
         }
         scheduleRefreshLoop()
+    }
+
+    /** Detach the WebView (called from Activity.onDestroy). Server keeps running. */
+    fun detachWebHost() {
+        refreshJob?.cancel()
+        refreshJob = null
+        webView?.destroy()
+        webView = null
     }
 
     fun refresh() {

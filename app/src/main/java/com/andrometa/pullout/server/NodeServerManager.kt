@@ -126,7 +126,11 @@ object NodeServerManager {
             appendLine("COOKIE_PATH=$cookiePath")
             appendLine("YOUTUBE_SESSION_SERVER=${PoTokenManager.sessionServerUrl}")
             appendLine("YOUTUBE_SESSION_INNERTUBE_CLIENT=WEB_EMBEDDED")
-            appendLine("YOUTUBE_SESSION_RELOAD_INTERVAL=300")
+            // Poll the local token server every 60s: the WebView captures the token
+            // a few seconds after the app opens, and cobalt's initial startup poll
+            // will 503; a short interval means YouTube becomes usable within ~1 min
+            // rather than the 5 min a 300s interval would impose.
+            appendLine("YOUTUBE_SESSION_RELOAD_INTERVAL=60")
         }
         File(projectDir, ".env").writeText(env)
         Log.i(TAG, "wrote .env (session server ${PoTokenManager.sessionServerUrl})")
