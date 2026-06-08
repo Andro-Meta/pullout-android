@@ -43,7 +43,12 @@ class LocalMuxingManager(private val context: Context) {
     ): String? = withContext(Dispatchers.IO) {
         val videoTmp = File(context.cacheDir, "pullout_v_$recordId.tmp")
         val audioTmp = File(context.cacheDir, "pullout_a_$recordId.tmp")
-        val outputTmp = File(context.cacheDir, "pullout_out_$recordId.tmp")
+        // The output temp file MUST carry the real container extension (.mp4/.webm/...)
+        // — ffmpeg picks the muxer from the filename extension, and a ".tmp" output
+        // makes it fail with "Unable to choose an output format".
+        val outExt = response.outputFilename.substringAfterLast('.', "mp4").lowercase()
+            .ifBlank { "mp4" }
+        val outputTmp = File(context.cacheDir, "pullout_out_$recordId.$outExt")
 
         try {
             // Phase 1: Download video stream
