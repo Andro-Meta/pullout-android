@@ -71,6 +71,31 @@ import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
+// The bundled libnode is built without ICU, so the `Intl` global is missing.
+// youtubei.js (cobalt's YouTube extractor) calls `Intl.DateTimeFormat()` when
+// creating an Innertube session, which throws and crashes EVERY YouTube request.
+// Provide a minimal Intl shim.
+if (typeof globalThis.Intl === "undefined") {
+    globalThis.Intl = {
+        DateTimeFormat: function () {
+            return {
+                resolvedOptions: function () {
+                    return { timeZone: "UTC", locale: "en-US", calendar: "gregory", numberingSystem: "latn" };
+                },
+                format: function (d) { return new Date(d).toISOString(); },
+                formatToParts: function () { return []; }
+            };
+        },
+        NumberFormat: function () {
+            return { format: function (n) { return String(n); }, resolvedOptions: function () { return { locale: "en-US" }; } };
+        },
+        Collator: function () {
+            return { compare: function (a, b) { return String(a).localeCompare(String(b)); } };
+        },
+        getCanonicalLocales: function (l) { return Array.isArray(l) ? l : [l]; }
+    };
+}
+
 // Load a .env file written by NodeServerManager (COOKIE_PATH, YOUTUBE_SESSION_*).
 // cobalt itself does not import dotenv, so we hydrate process.env here first.
 try {
