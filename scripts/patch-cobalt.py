@@ -129,6 +129,28 @@ def patch_version_info(root: str) -> None:
     print("  [version-info] replaced with git-free shim")
 
 
+def patch_session_reload_interval(root: str) -> None:
+    """Lower the YouTube session reload interval from cobalt's hardcoded 300s to
+    30s. The on-device po_token generator (bgutils-js in a WebView) takes a few
+    seconds to mint the first token, so cobalt's startup poll always misses it;
+    a 30s retry means YouTube becomes usable within ~30s of launch rather than
+    the 5 minutes the 300s default would impose. This value is NOT env-configurable
+    in cobalt, so we patch the default directly."""
+    path = os.path.join(root, "src", "core", "env.js")
+    if not os.path.exists(path):
+        print("  [session] src/core/env.js not found, skipping")
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+    new = content.replace("ytSessionReloadInterval: 300", "ytSessionReloadInterval: 30")
+    if new != content:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(new)
+        print("  [session] ytSessionReloadInterval 300 -> 30")
+    else:
+        print("  [session] already patched or default changed upstream")
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print("usage: python patch-cobalt.py <path-to-nodejs-project>")
@@ -141,6 +163,7 @@ def main() -> int:
     patch_ffmpeg_static(root)
     patch_icu_regexes(root)
     patch_version_info(root)
+    patch_session_reload_interval(root)
     print("==> cobalt bundle patched for Android")
     return 0
 
