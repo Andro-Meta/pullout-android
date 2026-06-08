@@ -56,4 +56,12 @@
     <string name="mux_phase_video">downloading video…</string>
     <string name="mux_phase_audio">downloading audio…</string>
     <string name="mux_phase_merge">merging…</string>
+    <string name="accounts_title">ACCOUNTS</string>
+    <string name="account_login">[ LOG IN ]</string>
+    <string name="account_logout">[ LOG OUT ]</string>
+    <string name="account_status_in">CONNECTED</string>
+    <string name="account_status_out">NOT CONNECTED</string>
+    <string name="login_close">[ X ]</string>
+    <string name="login_failed">couldn\'t capture login — try again</string>
+    <string name="settings_accounts">accounts</string>
 </resources>

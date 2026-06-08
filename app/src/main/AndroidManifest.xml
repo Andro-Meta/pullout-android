@@ -39,6 +39,12 @@
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
         </activity>
 
+        <activity
+            android:name=".auth.LoginActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Pullout"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
         <service
             android:name=".server.CobaltServerService"
             android:foregroundServiceType="dataSync"
