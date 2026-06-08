@@ -27,7 +27,13 @@ class CobaltServerService : Service() {
             startForeground(NotificationHelper.FOREGROUND_ID, notification)
         }
 
+        // 1) Reserve the po_token loopback port so YOUTUBE_SESSION_SERVER is known
+        //    BEFORE NodeServerManager writes the .env file.
+        com.andrometa.pullout.auth.PoTokenManager.reservePort()
+        // 2) Start cobalt (writes .env using the reserved port, then boots node).
         NodeServerManager.startServer(this)
+        // 3) Bring up the po_token HTTP server + hidden WebView.
+        com.andrometa.pullout.auth.PoTokenManager.start(applicationContext)
         return START_STICKY  // Restart service if killed
     }
 

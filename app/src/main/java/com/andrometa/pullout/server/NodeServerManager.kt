@@ -1,9 +1,14 @@
 package com.andrometa.pullout.server
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.andrometa.pullout.MainActivity
+import com.andrometa.pullout.auth.PoTokenManager
 import com.janeasystems.nodejsmobile.NodeJsMobile
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
@@ -16,6 +21,7 @@ object NodeServerManager {
     private const val PORT = 9000
     private const val HEALTH_INTERVAL_MS = 500L
     private const val HEALTH_TIMEOUT_MS = 30_000L
+    private const val RESTART_REQUEST_CODE = 0xC0BA17
 
     private val _serverState = MutableLiveData<ServerState>(ServerState.Cold)
     val serverState: LiveData<ServerState> = _serverState
@@ -92,7 +98,38 @@ object NodeServerManager {
         targetDir.mkdirs()
         copyAssetDir(context, "nodejs-project", targetDir)
         Log.i(TAG, "Extraction complete")
+        ensureCookiesJson(targetDir)
+        writeEnvFile(targetDir)
         return targetDir.absolutePath
+    }
+
+    /** Seed an empty cobalt cookies.json if absent (never clobber an existing one). */
+    private fun ensureCookiesJson(projectDir: File) {
+        val cookies = File(projectDir, "cookies.json")
+        if (!cookies.exists()) {
+            cookies.writeText("{}")
+            Log.i(TAG, "seeded empty cookies.json")
+        }
+    }
+
+    /**
+     * Write the .env consumed by main.js -> cobalt. Reserves the po_token port
+     * first so YOUTUBE_SESSION_SERVER points at the live PoTokenServer.
+     */
+    private fun writeEnvFile(projectDir: File) {
+        PoTokenManager.reservePort()
+        val cookiePath = File(projectDir, "cookies.json").absolutePath
+        val env = buildString {
+            appendLine("API_URL=http://localhost:$PORT/")
+            appendLine("API_PORT=$PORT")
+            appendLine("API_LISTEN_ADDRESS=127.0.0.1")
+            appendLine("COOKIE_PATH=$cookiePath")
+            appendLine("YOUTUBE_SESSION_SERVER=${PoTokenManager.sessionServerUrl}")
+            appendLine("YOUTUBE_SESSION_INNERTUBE_CLIENT=WEB_EMBEDDED")
+            appendLine("YOUTUBE_SESSION_RELOAD_INTERVAL=300")
+        }
+        File(projectDir, ".env").writeText(env)
+        Log.i(TAG, "wrote .env (session server ${PoTokenManager.sessionServerUrl})")
     }
 
     private fun copyAssetDir(context: Context, assetPath: String, destDir: File) {
@@ -155,6 +192,33 @@ object NodeServerManager {
 
     fun isReady(): Boolean = _serverState.value is ServerState.Ready
 
-    /** Stub — full implementation added in Task 8 (env injection). */
-    fun restartServer(context: Context) { }
+    /**
+     * cobalt reads cookies.json + process.env only at startup, and nodejs-mobile
+     * cannot restart node in-process. So we relaunch MainActivity via AlarmManager
+     * and hard-exit the process; Android brings the app back with a fresh node.
+     */
+    fun restartServer(context: Context) {
+        Log.w(TAG, "restartServer: scheduling full process restart to reload cookies/env")
+        // Re-write .env/cookies seed against the (already-extracted) project dir.
+        runCatching {
+            val projectDir = File(context.filesDir, "nodejs-project")
+            if (projectDir.exists()) {
+                ensureCookiesJson(projectDir)
+                writeEnvFile(projectDir)
+            }
+        }
+        scheduleRestart(context.applicationContext)
+    }
+
+    private fun scheduleRestart(context: Context) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        val flags = PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        val pending = PendingIntent.getActivity(context, RESTART_REQUEST_CODE, intent, flags)
+        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        am.set(AlarmManager.RTC, System.currentTimeMillis() + 700L, pending)
+        Log.w(TAG, "process exiting in 700ms for restart")
+        Runtime.getRuntime().exit(0)
+    }
 }

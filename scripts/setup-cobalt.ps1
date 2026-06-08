@@ -67,11 +67,42 @@ foreach ($dep in @("isolated-vm","ffmpeg-static","freebind")) {
 $MainJs = Join-Path $SrcDir "api\main.js"
 @'
 // PULLOUT nodejs-mobile entry point
+import { readFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+// Load a .env file written by NodeServerManager (COOKIE_PATH, YOUTUBE_SESSION_*).
+// cobalt itself does not import dotenv, so we hydrate process.env here first.
+try {
+    const __dir = dirname(fileURLToPath(import.meta.url));
+    const envPath = join(__dir, ".env");
+    if (existsSync(envPath)) {
+        const lines = readFileSync(envPath, "utf8").split("\n");
+        for (let line of lines) {
+            line = line.trim();
+            if (!line || line.startsWith("#")) continue;
+            const eq = line.indexOf("=");
+            if (eq <= 0) continue;
+            const key = line.slice(0, eq).trim();
+            let value = line.slice(eq + 1).trim();
+            if (value.length >= 2 &&
+                ((value[0] === '"' && value[value.length - 1] === '"') ||
+                 (value[0] === "'" && value[value.length - 1] === "'"))) {
+                value = value.slice(1, -1);
+            }
+            if (process.env[key] === undefined) {
+                process.env[key] = value;
+            }
+        }
+    }
+} catch (e) {
+    console.error("[PULLOUT] .env load failed:", e.message || e);
+}
+
 process.env.API_URL            = process.env.API_URL            || "http://localhost:9000/";
 process.env.API_PORT           = process.env.API_PORT           || "9000";
 process.env.API_LISTEN_ADDRESS = process.env.API_LISTEN_ADDRESS || "127.0.0.1";
-// localProcessing:forced is sent per-request by the Android client so cobalt never
-// needs ffmpeg on this side; only extraction + stream URL resolution happens here.
+
 import("./src/cobalt.js").catch((e) => {
     console.error("[PULLOUT] cobalt boot failed:", e.message || e);
     process.exit(1);
