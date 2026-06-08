@@ -52,18 +52,28 @@ class LocalMuxingManager(private val context: Context) {
                 downloadToFile(response.tunnels[0], videoTmp, recordId, repo, notificationHelper)
             }
 
-            // Phase 2: Download audio stream (if merge type has 2 tunnels)
-            if (response.tunnels.size > 1 && response.type != "mute") {
-                repo.updateMuxPhase(recordId, "DOWNLOADING_AUDIO")
-                downloadToFile(response.tunnels[1], audioTmp, recordId, repo, notificationHelper)
-            }
+            // Fast path: "proxy" type means cobalt is just proxying the bytes as-is
+            // (e.g. TikTok). No ffmpeg processing is needed — the single tunnel IS
+            // the final file. Use the downloaded video tmp directly as the output.
+            val needsFfmpeg = response.type != "proxy"
 
-            // Phase 3: Mux
-            repo.updateMuxPhase(recordId, "MERGING")
-            val muxResult = mux(videoTmp, if (audioTmp.exists()) audioTmp else null, outputTmp, response.type)
-            if (!muxResult) {
-                Log.e(TAG, "Mux failed for record $recordId")
-                return@withContext null
+            if (!needsFfmpeg) {
+                // Skip ffmpeg entirely; videoTmp is the finished file.
+                videoTmp.copyTo(outputTmp, overwrite = true)
+            } else {
+                // Phase 2: Download audio stream (if merge type has 2 tunnels)
+                if (response.tunnels.size > 1 && response.type != "mute") {
+                    repo.updateMuxPhase(recordId, "DOWNLOADING_AUDIO")
+                    downloadToFile(response.tunnels[1], audioTmp, recordId, repo, notificationHelper)
+                }
+
+                // Phase 3: Mux
+                repo.updateMuxPhase(recordId, "MERGING")
+                val muxResult = mux(videoTmp, if (audioTmp.exists()) audioTmp else null, outputTmp, response.type)
+                if (!muxResult) {
+                    Log.e(TAG, "Mux failed for record $recordId")
+                    return@withContext null
+                }
             }
 
             // Write to MediaStore
@@ -160,9 +170,14 @@ class LocalMuxingManager(private val context: Context) {
 
         return try {
             Log.d(TAG, "ffmpeg cmd: ${args.joinToString(" ")}")
-            val process = ProcessBuilder(args)
-                .redirectErrorStream(true)
-                .start()
+            val nativeLibDir = context.applicationInfo.nativeLibraryDir
+            val pb = ProcessBuilder(args).redirectErrorStream(true)
+            // libffmpegexe.so dynamically links libffmpeg.so at runtime; the linker
+            // only searches LD_LIBRARY_PATH for app-private dirs, so point it at the
+            // native lib dir or the executable cannot be linked.
+            pb.environment()["LD_LIBRARY_PATH"] =
+                "$nativeLibDir:" + (System.getenv("LD_LIBRARY_PATH") ?: "")
+            val process = pb.start()
 
             // Drain output to logcat
             val outputReader = process.inputStream.bufferedReader()

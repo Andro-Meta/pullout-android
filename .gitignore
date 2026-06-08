@@ -13,3 +13,4 @@ cobalt-deploy/
 .cxx/
 *.apk
 *.keystore
+cobalt-deploy-v2/

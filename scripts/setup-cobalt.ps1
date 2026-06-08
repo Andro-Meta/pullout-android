@@ -79,31 +79,46 @@ import("./src/cobalt.js").catch((e) => {
 '@ | Set-Content -Path $MainJs -NoNewline
 Write-Host "wrote main.js"
 
-# 6. Install workspace deps
-Push-Location $SrcDir
-pnpm install --no-frozen-lockfile
-Pop-Location
-
-# 7. Detect api package name
-$ApiPkg = (Get-Content $PkgPath -Raw | ConvertFrom-Json).name
-Write-Host "api package: $ApiPkg"
-
-# 8. pnpm deploy → self-contained directory
+# 6. Build a self-contained deploy directory.
+#    NOTE: `pnpm deploy` prunes too aggressively here and drops transitive deps
+#    of youtubei.js (e.g. @bufbuild/protobuf), so we copy the api package and run
+#    a plain production npm install instead — this resolves the full dependency
+#    tree (~90 packages vs ~20 from pnpm deploy).
 if (Test-Path $DeployDir) { Remove-Item -Recurse -Force $DeployDir }
-Push-Location $SrcDir
-pnpm --filter "$ApiPkg" deploy --prod $DeployDir
+New-Item -ItemType Directory -Force -Path $DeployDir | Out-Null
+robocopy (Join-Path $SrcDir "api") $DeployDir /E /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
+
+# 6a. Pre-stage the workspace-local @imput/version-info package so npm can resolve it.
+$VersionInfoDest = Join-Path $DeployDir "node_modules\@imput\version-info"
+New-Item -ItemType Directory -Force -Path $VersionInfoDest | Out-Null
+robocopy (Join-Path $SrcDir "packages\version-info") $VersionInfoDest /E /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
+
+# 6b. Rewrite the workspace: protocol ref so npm install accepts it.
+$DeployPkgPath = Join-Path $DeployDir "package.json"
+$pkgText = Get-Content $DeployPkgPath -Raw
+$pkgText = $pkgText -replace '"@imput/version-info":\s*"workspace:\^"', '"@imput/version-info": "*"'
+Set-Content -Path $DeployPkgPath -Value $pkgText -NoNewline
+
+# 6c. Full production install (resolves all transitive deps).
+Push-Location $DeployDir
+npm install --production --legacy-peer-deps
 Pop-Location
 
-# 9. Ensure main.js is at deploy root
+# 7. Ensure main.js is at deploy root
 $DeployMain = Join-Path $DeployDir "main.js"
 if (-not (Test-Path $DeployMain)) {
     Copy-Item -Force $MainJs $DeployMain
 }
 
-# 10. Write version
+# 8. Write version marker (used by NodeServerManager to decide re-extraction)
 Set-Content -Path (Join-Path $DeployDir "pullout-version.txt") -Value $GitHash -NoNewline
 
-# 11. Copy to app assets
+# 9. Apply Android-specific runtime patches (ICU regexes, ffmpeg-static,
+#    version-info git shim). See scripts/patch-cobalt.py for details.
+python (Join-Path $PSScriptRoot "patch-cobalt.py") $DeployDir
+if ($LASTEXITCODE -ne 0) { throw "patch-cobalt.py failed" }
+
+# 10. Copy to app assets
 if (Test-Path $AssetsDir) { Remove-Item -Recurse -Force $AssetsDir }
 New-Item -ItemType Directory -Force -Path $AssetsDir | Out-Null
 Get-ChildItem -Path $DeployDir | Copy-Item -Destination $AssetsDir -Recurse -Force
