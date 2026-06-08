@@ -22,7 +22,10 @@ class DownloadQueueSheet : BottomSheetDialogFragment() {
         SheetDownloadQueueBinding.inflate(i, c, false).also { _b = it }.root
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        adapter = DownloadAdapter(onRetry = { r -> onRetry?.invoke(r) }, onCancel = {})
+        adapter = DownloadAdapter(
+            onRetry = { r -> onRetry?.invoke(r) },
+            onCancel = { r -> vm.cancelDownload(r) }
+        )
         b.recyclerQueue.layoutManager = LinearLayoutManager(requireContext())
         b.recyclerQueue.adapter = adapter
 

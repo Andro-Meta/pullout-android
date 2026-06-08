@@ -22,6 +22,7 @@ class DownloadRepository(context: Context) {
     suspend fun incrementRetry(id: Long) = dao.incrementRetry(id)
     suspend fun resetStuckDownloads() = dao.resetStuckDownloads()
     suspend fun getById(id: Long): DownloadRecord? = dao.getById(id)
+    suspend fun deleteById(id: Long) = dao.deleteById(id)
     suspend fun clearHistory() = dao.clearHistory()
     fun updateStatusAsync(id: Long, status: DownloadStatus) =
         ioScope.launch { dao.updateStatus(id, status) }

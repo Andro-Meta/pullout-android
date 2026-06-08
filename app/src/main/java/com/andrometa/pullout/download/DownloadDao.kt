@@ -29,12 +29,15 @@ interface DownloadDao {
     @Query("SELECT * FROM downloads ORDER BY timestamp DESC")
     fun getAllLive(): LiveData<List<DownloadRecord>>
 
-    @Query("SELECT * FROM downloads WHERE status IN ('QUEUED','DOWNLOADING','FAILED_NETWORK') ORDER BY timestamp DESC")
+    @Query("SELECT * FROM downloads WHERE status IN ('QUEUED','DOWNLOADING') ORDER BY timestamp DESC")
     fun getActiveLive(): LiveData<List<DownloadRecord>>
 
     @Query("SELECT * FROM downloads WHERE id = :id")
     suspend fun getById(id: Long): DownloadRecord?
 
-    @Query("DELETE FROM downloads WHERE status IN ('COMPLETE','FAILED')")
+    @Query("DELETE FROM downloads WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM downloads WHERE status IN ('COMPLETE','FAILED','FAILED_NETWORK')")
     suspend fun clearHistory()
 }

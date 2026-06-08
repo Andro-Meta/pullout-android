@@ -7,13 +7,16 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import androidx.work.WorkManager
 import com.andrometa.pullout.api.CobaltResponse
 import com.andrometa.pullout.util.NotificationHelper
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.File
 import java.io.IOException
 import java.net.UnknownHostException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -22,6 +25,9 @@ class DownloadService : Service() {
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
     private val activeCount = AtomicInteger(0)
+    // Maps a download record id -> the coroutine performing it, so a CANCEL
+    // intent can abort the specific in-flight download.
+    private val activeJobs = ConcurrentHashMap<Long, Job>()
     private lateinit var repository: DownloadRepository
     private lateinit var notificationHelper: NotificationHelper
     private lateinit var mediaStoreWriter: MediaStoreWriter
@@ -65,8 +71,17 @@ class DownloadService : Service() {
                 )
                 scope.launch {
                     val id = repository.insert(record)
-                    processDirectDownload(record.copy(id = id))
+                    activeJobs[id] = coroutineContext.job
+                    try {
+                        processDirectDownload(record.copy(id = id))
+                    } finally {
+                        activeJobs.remove(id)
+                    }
                 }
+            }
+            ACTION_CANCEL -> {
+                val id = intent.getLongExtra(EXTRA_RECORD_ID, -1L)
+                if (id >= 0) cancelDownload(id)
             }
             ACTION_MUX -> {
                 val tunnels = intent.getStringArrayListExtra(EXTRA_TUNNELS) ?: return START_NOT_STICKY
@@ -79,10 +94,12 @@ class DownloadService : Service() {
                 val record = DownloadRecord(originalUrl = originalUrl, filename = filename, mimeType = mimeType, isMuxed = true)
                 scope.launch {
                     val id = repository.insert(record)
+                    activeJobs[id] = coroutineContext.job
                     activeCount.incrementAndGet()
                     try {
                         muxingManager.process(id, response, repository, notificationHelper, mediaStoreWriter)
                     } finally {
+                        activeJobs.remove(id)
                         if (activeCount.decrementAndGet() == 0) stopSelf()
                     }
                 }
@@ -130,6 +147,10 @@ class DownloadService : Service() {
                     throw e
                 }
             }
+        } catch (e: CancellationException) {
+            // Download was cancelled by the user — don't mark FAILED.
+            // cancelDownload() handles record/temp/notification cleanup.
+            throw e
         } catch (e: UnknownHostException) {
             handleNetworkFail(record)
         } catch (e: IOException) {
@@ -159,6 +180,34 @@ class DownloadService : Service() {
         }
     }
 
+    /**
+     * Cancels an in-flight or queued download: aborts its coroutine, cancels any
+     * scheduled retry, removes temp files, dismisses the notification, and deletes
+     * the record so it disappears from both the active and history tabs.
+     */
+    private fun cancelDownload(id: Long) {
+        // Hold a slot so finishing the cancelled job doesn't stopSelf() before cleanup.
+        activeCount.incrementAndGet()
+        scope.launch {
+            try {
+                activeJobs.remove(id)?.cancelAndJoin()
+                WorkManager.getInstance(this@DownloadService).cancelUniqueWork("retry_$id")
+                // Remove any temp files the muxing/download pipeline may have created.
+                cacheDir.listFiles { f ->
+                    f.name.startsWith("pullout_v_$id.") ||
+                    f.name.startsWith("pullout_a_$id.") ||
+                    f.name.startsWith("pullout_out_$id.")
+                }?.forEach { runCatching { it.delete() } }
+                notificationHelper.cancel(id)
+                repository.deleteById(id)
+            } catch (e: Exception) {
+                Log.e(TAG, "cancelDownload failed for $id", e)
+            } finally {
+                if (activeCount.decrementAndGet() == 0) stopSelf()
+            }
+        }
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
@@ -170,6 +219,8 @@ class DownloadService : Service() {
         private const val TAG = "DownloadService"
         const val ACTION_DIRECT = "com.andrometa.pullout.DIRECT"
         const val ACTION_MUX = "com.andrometa.pullout.MUX"
+        const val ACTION_CANCEL = "com.andrometa.pullout.CANCEL"
+        const val EXTRA_RECORD_ID = "recordId"
         const val EXTRA_URL = "url"
         const val EXTRA_ORIGINAL_URL = "originalUrl"
         const val EXTRA_FILENAME = "filename"
@@ -185,6 +236,13 @@ class DownloadService : Service() {
                 putExtra(EXTRA_ORIGINAL_URL, originalUrl)
                 putExtra(EXTRA_FILENAME, filename)
                 putExtra(EXTRA_MIME_TYPE, mimeType)
+            })
+        }
+
+        fun cancel(ctx: Context, recordId: Long) {
+            ctx.startForegroundService(Intent(ctx, DownloadService::class.java).apply {
+                action = ACTION_CANCEL
+                putExtra(EXTRA_RECORD_ID, recordId)
             })
         }
 
