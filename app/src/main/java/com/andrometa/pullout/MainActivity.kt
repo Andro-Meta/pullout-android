@@ -210,6 +210,7 @@ class MainActivity : AppCompatActivity() {
         binding.tvSettings.setOnClickListener {
             SettingsSheet.newInstance().also { sheet ->
                 sheet.onCobaltUrlChanged = { /* URL changed; CobaltApiClient reads from SettingsRepository live */ }
+                sheet.onCookiesChanged = { NodeServerManager.restartServer(this) }
                 sheet.show(supportFragmentManager, SettingsSheet.TAG)
             }
         }

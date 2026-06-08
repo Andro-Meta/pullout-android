@@ -19,6 +19,7 @@ class SettingsSheet : BottomSheetDialogFragment() {
     private val vm: DownloadQueueViewModel by activityViewModels()
     private lateinit var settings: SettingsRepository
     var onCobaltUrlChanged: ((String) -> Unit)? = null
+    var onCookiesChanged: (() -> Unit)? = null
 
     override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?) =
         SheetSettingsBinding.inflate(i, c, false).also { _b = it }.root
@@ -53,6 +54,12 @@ class SettingsSheet : BottomSheetDialogFragment() {
                 .setToolbarColor(Color.parseColor("#0E0E16"))
                 .build()
                 .launchUrl(requireContext(), Uri.parse("https://github.com/imputnet/cobalt/blob/main/docs/api.md"))
+        }
+        _b?.btnAccounts?.setOnClickListener {
+            AccountsSheet.newInstance().also { sheet ->
+                sheet.onCookiesChanged = { onCookiesChanged?.invoke() }
+                sheet.show(parentFragmentManager, AccountsSheet.TAG)
+            }
         }
     }
 

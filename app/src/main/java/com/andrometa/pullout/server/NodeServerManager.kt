@@ -154,4 +154,7 @@ object NodeServerManager {
     }
 
     fun isReady(): Boolean = _serverState.value is ServerState.Ready
+
+    /** Stub — full implementation added in Task 8 (env injection). */
+    fun restartServer(context: Context) { }
 }

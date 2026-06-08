@@ -56,6 +56,14 @@
             android:fontFamily="@font/space_mono_regular"
             android:textColor="@color/text_primary"/>
 
+        <Button android:id="@+id/btnAccounts"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/settings_accounts"
+            android:fontFamily="@font/space_mono_bold"
+            android:textColor="@color/neon_cyan"/>
+
         <Button android:id="@+id/btnClearHistory"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent" android:layout_height="wrap_content"
